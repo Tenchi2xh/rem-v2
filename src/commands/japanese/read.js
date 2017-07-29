@@ -141,6 +141,9 @@ class Read extends Command {
                 font-size: 20pt;
                 font-weight: 700;
             }
+            #text {
+                padding-left: 20px;
+            }
         </style>
         <meta charset="utf8">
     </head>
