@@ -171,7 +171,7 @@ class Read extends Command {
                 await page.render('out.png').then(() => {
                     msg.channel.createMessage('', {
                         "file": new Buffer(fs.readFileSync('out.png')),
-                        "name": "out.png"
+                        "name": "reading.png"
                     });
                 });
                 await instance.exit();
