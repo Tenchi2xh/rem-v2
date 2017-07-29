@@ -65,34 +65,51 @@ class Help extends Command {
      */
     buildCommandHelp(msg, command) {
         let helpMessage = "";
-        helpMessage += this.t('help.command-help-title', {
-                lngs: msg.lang,
-                command: command.cmd,
-                prefix: msg.prefix
-            }) + '\n';
+
         if (command.aliases.length > 0) {
             let aliases = command.aliases.map(a => `\`${a}\``);
-            helpMessage += this.t('help.command-aliases', {lngs: msg.lang, aliases: aliases.join(', ')}) + '\n';
+            helpMessage += 'Aliases: ' + aliases.join(' ') + '\n\n';
         }
         if (command.help.short) {
-            helpMessage += this.t('help.command-shorthelp', {lngs: msg.lang}) + ' ' + `\`${this.t(command.help.short, {lngs: msg.lang})}\`` + '\n';
+            helpMessage += this.t(command.help.short, {lngs: msg.lang}) + '\n\n';
         }
         if (command.help.long) {
-            helpMessage += this.t('help.command-longhelp', {lngs: msg.lang}) + '\n' + `\`\`\`${this.t(command.help.long, {lngs: msg.lang})}\`\`\`` + '\n';
+            helpMessage += this.t(command.help.long, {lngs: msg.lang}) + '\n';
         }
+
+        var embed = {
+            "embed": {
+                "title": "`" + msg.prefix + command.cmd + "`",
+                "description": helpMessage,
+                "color": 7054335,
+                "footer": {
+                    "icon_url": "https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png",
+                    "text": "github.com/Tenchi2xh/rem-v2"
+                },
+                "thumbnail": {
+                    "url": "https://user-images.githubusercontent.com/4116708/28647479-b0eb104a-7267-11e7-9778-63becbbaa56b.png"
+                },
+                "fields": [
+                    
+                ]
+            }
+        };
+
+
         if (command.help.usage) {
-            helpMessage += this.t('help.command-usage', {lngs: msg.lang}) + ' ' + `\`${this.t(command.help.usage, {
-                    lngs: msg.lang,
-                    prefix: msg.prefix
-                })}\`` + '\n';
+            embed["embed"]["fields"].push({
+                "name": "Usage",
+                "value": "`" + this.t(command.help.usage, {lngs: msg.lang, prefix: msg.prefix}) + "`"
+            });
         }
         if (command.help.example) {
-            helpMessage += this.t('help.command-example', {lngs: msg.lang}) + '\n' + `${this.t(command.help.example, {
-                    lngs: msg.lang,
-                    prefix: msg.prefix
-                })}` + '\n';
+            embed["embed"]["fields"].push({
+                "name": "Examples",
+                "value": this.t(command.help.example, {lngs: msg.lang, prefix: msg.prefix}).replace(/\n/g, '\n\n')
+            });
         }
-        return helpMessage;
+
+        return embed;
     }
 
     /**
