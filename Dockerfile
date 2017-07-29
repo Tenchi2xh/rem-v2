@@ -1,22 +1,20 @@
-FROM mhart/alpine-node:latest
+FROM wernight/phantomjs
 
-RUN apk update && apk add --no-cache git mongodb redis ffmpeg python2 build-base
+USER root
 
-RUN cd /tmp && \
-    wget http://pkgs.fedoraproject.org/repo/pkgs/mecab/mecab-0.996.tar.gz/7603f8975cea2496d88ed62545ba973f/mecab-0.996.tar.gz && \
-    wget http://pkgs.fedoraproject.org/repo/pkgs/mecab-ipadic/mecab-ipadic-2.7.0-20070801.tar.gz/e09556657cc70e45564c6514a6b08495/mecab-ipadic-2.7.0-20070801.tar.gz && \
-    tar xf mecab-0.996.tar.gz && \
-    tar xf mecab-ipadic-2.7.0-20070801.tar.gz && \
-    cd mecab-0.996 && \
-    ./configure && \
-    make && \
-    make install && \
-    cd ../mecab-ipadic-2.7.0-20070801/ && \
-    ./configure --with-charset=utf8 && \
-    make && \
-    /usr/local/libexec/mecab/mecab-dict-index -f euc-jp -t utf-8 && \
-    make install && \
-    rm -rf /tmp/mecab*
+RUN echo "deb http://ftp.uk.debian.org/debian jessie-backports main" >> /etc/apt/sources.list && \
+    apt-get update -y && \
+    apt-get install -y mecab-ipadic-utf8 && \
+    apt-get install -y git mongodb ffmpeg mecab wget redis-server build-essential fontconfig && \
+    mkdir ~/.ssh && \
+    ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts && \
+    wget -qO- https://deb.nodesource.com/setup_8.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    wget -qO /usr/local/share/fonts/noto.otf https://github.com/googlei18n/noto-cjk/raw/master/NotoSansCJKjp-Regular.otf && \
+    fc-cache -v /usr/local/share/fonts/
+
+COPY src/run.sh src/dummy.js /
 
 COPY package.json package-lock.json /rem-v2/
 
@@ -26,8 +24,11 @@ RUN npm install
 RUN mkdir temp audio db
 COPY kanji/ kanji/
 COPY config/ config/
-COPY src/run.sh src/dummy.js /
 COPY rem_translate/ rem_translate/
 COPY src/ src/
 
-CMD /run.sh
+RUN useradd -m rem && chmod -R 777 /rem-v2 /run.sh /dummy.js
+USER rem
+
+ENTRYPOINT ["/bin/sh"]
+CMD ["/run.sh"]

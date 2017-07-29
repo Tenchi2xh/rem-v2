@@ -1,29 +1,95 @@
 let Command = require('../../structures/command');
-
+const phantom = require('phantom');
+const fs = require('fs');
+let cp = require('child_process');
 let StringDecoder = require('string_decoder').StringDecoder;
-let cp = require('child_process')
 
-function katakanaToHiragana(katakana) {
-    var hiragana = '';
-    for (var i = 0; i < katakana.length; ++i) {
-        let n = katakana[i].charCodeAt(0);
-        if (n > 0x30A0 && n <= 0x30FA) {
-            n -= 0x60;
-        }
-        hiragana += String.fromCharCode(n);
+function katakanaToHiragana(input = '') {
+    const HIRAGANA_START = 0x3041;
+    const KATAKANA_START = 0x30A1;
+    const KATAKANA_END = 0x30FC;
+    var hira = '';
+    for (var letter of input) {
+        var code = letter.charCodeAt(0);
+        if (code >= KATAKANA_START && code <= KATAKANA_END)
+            code = code + (HIRAGANA_START - KATAKANA_START);
+        hira += String.fromCharCode(code);
     }
-    return hiragana;
+    return hira;
+}
+
+function slice(string, start, end, step) { // a proper substr
+    var slice = string.slice, sliced = slice.call(string, start, end),
+        result, length, i;
+
+    if (!step) {
+        return sliced;
+    }
+    result = [];
+    length = sliced.length;
+    i = (step > 0) ? 0 : length - 1;
+    for (; i < length && i >= 0; i += step) {
+        result.push(sliced[i]);
+    }
+    return result;
+}
+function furiToRb(kanji, reading) {
+    if (kanji == reading)
+        return reading;
+    if (kanji == 'だ' && reading == "で")
+        return "だ";
+    var furigana = '';
+    var placeLeft = 0
+    var placeRight = 0
+    var lastKanji = kanji.length;
+    var lastReading = reading.length;
+    var j = 0;
+    for (var i = 0; i < kanji.length; i++) {
+        placeRight = i;
+        j = i + 1;
+        if (kanji[lastKanji - j] != reading[lastReading - j])
+            break;
+    }
+    for (var i = 0; i < kanji.length; i++) {
+        placeLeft = i
+        if (kanji[i] != reading[i])
+            break;
+    }
+    var before = '';
+    var after = '';
+    var ruby = '';
+    var rt = '';
+    if (placeLeft == 0) {
+        if (placeRight == 0) {
+            ruby = kanji;
+            rt = reading;
+        } else {
+            ruby = slice(kanji, 0, lastKanji - placeRight);
+            rt = slice(reading, 0, lastReading - placeRight);
+            after = slice(reading, lastReading - placeRight);
+        }
+    } else {
+        if (placeRight == 0) {
+            before = slice(reading, 0, placeLeft);
+            ruby = slice(kanji, placeLeft);
+            rt = slice(reading, placeLeft);
+        } else {
+            before = slice(reading, 0, placeLeft);
+            ruby = slice(kanji, placeLeft, lastKanji - placeRight);
+            rt = slice(reading, placeLeft, lastReading - placeRight);
+            after = slice(reading, lastReading - placeRight);
+        }
+    }
+    return `${before}<ruby><rb>${ruby}</rb><rt>${rt}</rt></ruby>${after}`
 }
 
 function mecab(input, callback) {
     let decoder = new StringDecoder('utf8');
-    var c = cp.spawn('mecab', ['-F%FC[7]・', '-E\\s'])
+    var c = cp.spawn('mecab', []);
 
     c.stdin.write(input + '\n');
     c.stdout.on('data', data => {
-        var katakana = decoder.write(data);
-        var hiragana = katakanaToHiragana(katakana);
-        callback(hiragana.slice(0, -2));
+        callback(decoder.write(data));
     });
     c.stdin.end();
 }
@@ -44,24 +110,73 @@ class Read extends Command {
     }
 
     run(msg) {
-        var outside = this;
         var sentence = msg.content.split(' ');
         sentence.shift();
         sentence = sentence.join(' ').trim();
+        var code = `<!Doctype html>
+<html>
+    <head>
+        <style>
+            body {
+                font-size: 45pt;
+                text-shadow: -1px -1px 0 rgba(0, 0, 0, .75), 1px -1px 0 rgba(0, 0, 0, .75), -1px 1px 0 rgba(0, 0, 0, .75), 1px 1px 0 rgba(0, 0, 0, .75);
+                color: rgba(255, 255, 255, .75);
+                width: 1000px;
+                font-family: "Noto Sans";
+            }
+            rt {
+                font-size: 16pt;
+                font-weight: 700;
+            }
+        </style>
+        <meta charset="utf8">
+    </head>
+    <body>
+        <div id="text">
+            ####furigana####
+        </div>
+    </body>
+</html>`;
 
         if (sentence === '') return msg.channel.createMessage(this.t('generic.empty-search', {lngs: msg.lang}));
 
-        mecab(sentence, function(hiragana) {
-            if (hiragana.includes("given index is out of")) return msg.channel.createMessage(outside.t('generic.error', {lngs: msg.lang}));
-
-            msg.channel.createMessage({
-                "content": "Let me read that for you:",
-                "embed": {
-                    "description": hiragana
-                }
-            });          
+        mecab(sentence, (stdout) => {
+            var rows = stdout.split("\n");
+            var furi = '';
+            var out = [];
+            for(var row of rows) {
+                row = row.split("\t");
+                const original = row[0];
+                let cols = row[1];
+                if(typeof cols === 'undefined')
+                    continue;
+                cols = cols.split(',');
+                console.log(cols);
+                const isText = (original.match(/([A-Za-z0-9]+)$/) !== null);
+                const isHiraKata = (original.match(/^([\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f]+)$/) !== null);
+                if (isText || isHiraKata)
+                    furi += original;
+                else
+                    furi += furiToRb(original, katakanaToHiragana(cols[8]));
+                out.push(cols);
+            }
+            fs.writeFileSync('furi.html', code.replace('####furigana####', furi));
+            (async function () {
+                const instance = await phantom.create();
+                const page = await instance.createPage();
+                await page.open('furi.html');
+                var rect = page.evaluate(function () {
+                    return document.getElementById('text').getBoundingClientRect();
+                });
+                page.property('clipRect', { top: 0, left: 0, width: rect.right - rect.left, height: rect.bottom - rect.top });
+                page.render('out.png');
+                await instance.exit();
+                msg.channel.createMessage('', {
+                    "file": new Buffer(fs.readFileSync('out.png')),
+                    "name": "out.png"
+                });
+            })();
         });
-
     }
 }
 module.exports = Read;
