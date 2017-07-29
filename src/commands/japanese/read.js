@@ -156,7 +156,7 @@ class Read extends Command {
                 if (isText || isHiraKata)
                     furi += original;
                 else
-                    furi += furiToRb(original, katakanaToHiragana(cols[8]));
+                    furi += furiToRb(original, katakanaToHiragana(cols[7]));
                 out.push(cols);
             }
             fs.writeFileSync('furi.html', code.replace('####furigana####', furi));
@@ -167,7 +167,7 @@ class Read extends Command {
                 var rect = await page.evaluate(function () {
                     return document.getElementById('text').getBoundingClientRect();
                 });
-                await page.property('clipRect', { top: 0, left: 0, width: rect.width, height: rect.bottom });
+                await page.property('clipRect', { top: rect.top, left: rect.left, width: rect.width, height: rect.height });
                 await page.render('out.png').then(() => {
                     msg.channel.createMessage('', {
                         "file": new Buffer(fs.readFileSync('out.png')),
