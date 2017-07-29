@@ -125,7 +125,7 @@ class Read extends Command {
                 font-family: "Noto Sans";
             }
             rt {
-                font-size: 16pt;
+                font-size: 20pt;
                 font-weight: 700;
             }
         </style>
@@ -151,7 +151,6 @@ class Read extends Command {
                 if(typeof cols === 'undefined')
                     continue;
                 cols = cols.split(',');
-                console.log(cols);
                 const isText = (original.match(/([A-Za-z0-9]+)$/) !== null);
                 const isHiraKata = (original.match(/^([\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f]+)$/) !== null);
                 if (isText || isHiraKata)
@@ -165,16 +164,17 @@ class Read extends Command {
                 const instance = await phantom.create();
                 const page = await instance.createPage();
                 await page.open('furi.html');
-                var rect = page.evaluate(function () {
+                var rect = await page.evaluate(function () {
                     return document.getElementById('text').getBoundingClientRect();
                 });
-                page.property('clipRect', { top: 0, left: 0, width: rect.right - rect.left, height: rect.bottom - rect.top });
-                page.render('out.png');
-                await instance.exit();
-                msg.channel.createMessage('', {
-                    "file": new Buffer(fs.readFileSync('out.png')),
-                    "name": "out.png"
+                await page.property('clipRect', { top: 0, left: 0, width: rect.width, height: rect.bottom });
+                await page.render('out.png').then(() => {
+                    msg.channel.createMessage('', {
+                        "file": new Buffer(fs.readFileSync('out.png')),
+                        "name": "out.png"
+                    });
                 });
+                await instance.exit();
             })();
         });
     }
