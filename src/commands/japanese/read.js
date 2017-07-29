@@ -105,7 +105,7 @@ function generateShadow(thickness, steps) {
     return coords.join(", ");
 }
 
-let shadowCss = generateShadow(3.2, 20);
+let shadowCss = generateShadow(3.2, 50);
 
 class Read extends Command {
     constructor({t}) {
