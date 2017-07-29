@@ -109,12 +109,8 @@ class Read extends Command {
 		<style>
 			body {
 				font-size: 45pt;
-				text-shadow:
-					-1px -1px 0 black,
-					1px -1px 0 black,
-					-1px 1px 0 black,
-					1px 1px 0 black;
-				color: white;
+				text-shadow: -1px -1px 0 rgba(0, 0, 0, .75), 1px -1px 0 rgba(0, 0, 0, .75), -1px 1px 0 rgba(0, 0, 0, .75), 1px 1px 0 rgba(0, 0, 0, .75);
+				color: rgba(255, 255, 255, .75);
 				width: 1000px;
 				font-family: "Noto Sans";
 			}
@@ -134,18 +130,25 @@ class Read extends Command {
 
 		if (sentence === '') return msg.channel.createMessage(this.t('generic.empty-search', {lngs: msg.lang}));
 
-		exec('echo "' + sentence + '" | mecab -F"[%M	%FC[7]], " -E" "', (err, stdout, stderr) => {
-			var rows = stdout.split('], ');
+		exec('echo "' + sentence + '" | mecab ', (err, stdout, stderr) => {
+			var rows = stdout.split("\n");
 			var furi = '';
-			console.log(rows);
-			for (var row of rows) {
-				row = row.substr(1, row.length - 1).split("\t");
-				if (row[0] === '')
+			var out = [];
+			for(var row of rows) {
+				row = row.split("\t");
+				const original = row[0];
+				let cols = row[1];
+				if(typeof cols === 'undefined')
 					continue;
-				if (row[0].match(/[\x3400-\x4DB5\x4E00-\x9FCB\xF900-\xFA6A]/g))
-					furi += row[0];
+				cols = cols.split(',');
+				console.log(cols);
+				const isText = (original.match(/([A-Za-z0-9]+)$/) !== null);
+				const isHiraKata = (original.match(/^([\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f]+)$/) !== null);
+				if (isText || isHiraKata)
+					furi += original;
 				else
-					furi += furiToRb(row[0], katakanaToHiragana(row[1]));
+					furi += furiToRb(original, katakanaToHiragana(cols[8]));
+				out.push(cols);
 			}
 			fs.writeFileSync('furi.html', code.replace('####furigana####', furi));
 			(async function () {
