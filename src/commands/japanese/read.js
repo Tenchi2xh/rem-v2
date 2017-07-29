@@ -94,6 +94,19 @@ function mecab(input, callback) {
     c.stdin.end();
 }
 
+function generateShadow(thickness, steps) {
+    var step = 2 * Math.PI / steps;
+    var coords = [];
+    for (var i = 0; i < steps; ++i) {
+        var x = (thickness * Math.cos(i * step)).toFixed(2);
+        var y = (thickness * Math.sin(i * step)).toFixed(2)
+        coords.push(`${x}px ${y}px 0 black`);
+    }
+    return coords.join(", ");
+}
+
+let shadowCss = generateShadow(3.2, 20);
+
 class Read extends Command {
     constructor({t}) {
         super();
@@ -119,8 +132,8 @@ class Read extends Command {
         <style>
             body {
                 font-size: 45pt;
-                text-shadow: -1px -1px 0 rgba(0, 0, 0, .75), 1px -1px 0 rgba(0, 0, 0, .75), -1px 1px 0 rgba(0, 0, 0, .75), 1px 1px 0 rgba(0, 0, 0, .75);
-                color: rgba(255, 255, 255, .75);
+                text-shadow: ${shadowCss};
+                color: rgb(191, 191, 191);
                 width: 1000px;
                 font-family: "Noto Sans";
             }
