@@ -1,7 +1,7 @@
 let Command = require('../../structures/command');
 const phantom = require('phantom');
 const fs = require('fs');
-const { exec } = require('child_process');
+let cp = require('child_process');
 let StringDecoder = require('string_decoder').StringDecoder;
 
 function katakanaToHiragana(input = '') {
@@ -83,6 +83,17 @@ function furiToRb(kanji, reading) {
 	return `${before}<ruby><rb>${ruby}</rb><rt>${rt}</rt></ruby>${after}`
 }
 
+function mecab(input, callback) {
+    let decoder = new StringDecoder('utf8');
+    var c = cp.spawn('mecab', []);
+
+    c.stdin.write(input + '\n');
+    c.stdout.on('data', data => {
+        callback(decoder.write(data));
+    });
+    c.stdin.end();
+}
+
 class Read extends Command {
 	constructor({t}) {
 		super();
@@ -130,7 +141,7 @@ class Read extends Command {
 
 		if (sentence === '') return msg.channel.createMessage(this.t('generic.empty-search', {lngs: msg.lang}));
 
-		exec('echo "' + sentence + '" | mecab ', (err, stdout, stderr) => {
+		mecab(sentence, (stdout) => {
 			var rows = stdout.split("\n");
 			var furi = '';
 			var out = [];
