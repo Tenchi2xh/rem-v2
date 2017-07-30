@@ -8,10 +8,10 @@ const recursive = require('recursive-readdir');
 let path = require('path');
 let async = require('async');
 let StatsD = require('hot-shots');
-let dogstatsd = new StatsD({host: remConfig.statsd_host});
+let dogstatsd = new StatsD({ host: remConfig.statsd_host });
 let stat = `rem_${remConfig.environment}`;
 class MessageManager extends Manager {
-    constructor({cm, lm, gm, vm, um, pm, rm, sm, stm, mod}) {
+    constructor({ cm, lm, gm, vm, um, pm, rm, sm, stm, mod }) {
         super();
         this.setMaxListeners(20);
         this.l = lm;
@@ -50,7 +50,7 @@ class MessageManager extends Manager {
                 for (let file of files) {
                     if (file.endsWith('.js')) {
                         let command = require(file);
-                        let cmd = new command({t: this.t, v: this.v, mod});
+                        let cmd = new command({ t: this.t, v: this.v, mod });
                         commands[cmd.cmd] = cmd;
                         if (cmd.aliases && cmd.aliases.length > 0) {
                             cmd.aliases.forEach((alias) => {
@@ -104,8 +104,7 @@ class MessageManager extends Manager {
                             if (msg.channel.id === "203238995117867008" && msg.author.id !== remConfig.owner_id) {
                                 if (command.cat != "japanese")
                                     return;
-                            } 
-
+                            }
                             try {
                                 await this.p.checkPermission(msg, node);
                             } catch (e) {
@@ -116,6 +115,14 @@ class MessageManager extends Manager {
                                     node: node
                                 }));
                             }
+
+                            let roles = msg.channel.guild.members.find(m => m.id === msg.author.id).roles;
+                            let blacklistRole = msg.channel.guild.roles.find(r => r.name === 'Rem Blacklist');
+                            if (blacklistRole !== null && typeof blacklistRole !== 'undefined') {
+                                if (roles.indexOf(blacklistRole.id) !== -1)
+                                    return msg.channel.createMessage(`じいいいいいいぃぃ`)
+                            }
+
                             console.log(cmd);
                             if (command.needGuild) {
                                 if (msg.channel.guild) {
@@ -124,7 +131,7 @@ class MessageManager extends Manager {
                                 } else {
                                     dogstatsd.increment(`${stat}.failed-commands`);
                                     this.s.logCmdStat(msg, cmd, false, 'need-guild');
-                                    return msg.channel.createMessage(this.t('generic.no-pm', {lngs: msg.lang}));
+                                    return msg.channel.createMessage(this.t('generic.no-pm', { lngs: msg.lang }));
                                 }
                             } else {
                                 this.s.logCmdStat(msg, cmd, true);
@@ -197,7 +204,7 @@ class MessageManager extends Manager {
             return Guild;
         } else {
             winston.debug(`There was no Guild attached to the msg, using default settings!`);
-            return {prefix: '!w.', lng: 'en'};
+            return { prefix: '!w.', lng: 'en' };
         }
     }
 
