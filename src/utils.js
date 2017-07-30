@@ -155,10 +155,8 @@ rt {
                 cols = cols.split(',');
                 const isText = (original.match(/([A-Za-z0-9]+)$/) !== null);
                 const isHiraKata = (original.match(/^([\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f]+)$/) !== null);
-                if(isText && original == "NEWLINE")
-                    furi += '<br />';
-                else if (isText || isHiraKata)
-                    furi += original;
+                if (isText || isHiraKata)
+                    furi += original.replace(/NEWLINE/g, '<br />');
                 else
                     furi += utils.furiToRb(original, utils.katakanaToHiragana(cols[7]));
                 out.push(cols);
