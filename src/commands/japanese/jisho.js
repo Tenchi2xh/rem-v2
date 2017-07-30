@@ -36,7 +36,7 @@ function jishoEmbed(keyword, result, more) {
         embed['embed']['fields'][0]['name'] = result['japanese'][0]['reading'];
     }
 
-    embed['embed']['fields'][0]['value'] += result['is_common'] ? '(common word) ' : '(uncommon word) ';
+    embed['embed']['fields'][0]['value'] += result['is_common'] ? '(common word) ' : '';
 
     // The type of word is contained in the first set of senses of a result (Noun, Adjective etc.)
     if (result['senses'][0]['parts_of_speech'].length > 0) {
