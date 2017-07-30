@@ -137,7 +137,7 @@ rt {
     font-weight: 700;
 }
 #text {
-    padding: 3px;
+    padding: 3px 3px 3px 23px;
 }`;
         }
         console.log(sentence);
