@@ -34,6 +34,7 @@ class Player extends EventEmitter {
         this.channel = '';
         this.started = false;
         this.autoLeaveTimeout = null;
+        this.queueErrorSent = 0;
         this.autoplay();
     }
 
@@ -43,6 +44,8 @@ class Player extends EventEmitter {
      */
     async play(Song) {
         clearTimeout(this.autoLeaveTimeout);
+        while (this.queue.songs.length > 20)
+            this.queue.songs.pop();
         if ((this.connection && this.connection.ready || this.connection && rem.options.crystal) && Song) {
             let link;
             let options = {};
@@ -210,7 +213,7 @@ class Player extends EventEmitter {
                 this.queue.songs.unshift(current);
             }
         } else {
-            this.queue.songs.push(Song);
+            this.pushQueue(Song);
         }
         // console.log(this.started);
         // console.log(Song);
@@ -243,7 +246,7 @@ class Player extends EventEmitter {
                         this.queue.songs.unshift(Song);
                     }
                     if (this.queue.repeat === 'queue') {
-                        this.queue.songs.push(Song);
+                        this.pushQueue(Song);
                     }
                     if (this.queue.songs[0]) {
                         if (this.queue.songs[0].needsResolve) {
@@ -273,7 +276,7 @@ class Player extends EventEmitter {
                     this.queue.songs.unshift(song);
                 }
                 if (this.queue.repeat === 'queue') {
-                    this.queue.songs.push(song);
+                    this.pushQueue(song);
                 }
                 if (this.queue.songs[0]) {
                     if (this.queue.songs[0].needsResolve) {
@@ -403,27 +406,33 @@ class Player extends EventEmitter {
         }
     }
 
-    startQueue(msg) {
+        startQueue(msg) {
 
-    }
+        }
 
-    syncQueue() {
+        syncQueue() {
 
-    }
+        }
 
-    removeFromQueue(index) {
+        removeFromQueue(index) {
 
-    }
+        }
 
-    moveInQueue(oldIndex, newIndex) {
+        moveInQueue(oldIndex, newIndex) {
 
-    }
+        }
 
     updateConnection(conn) {
         this.connection = conn;
     }
 
     pushQueue(Song) {
+        if (this.queue.songs.length >= 20) {
+            if ((this.queueErrorSent - new Date().getTime()) < 60000)
+                throw new TranslatableError({ t: 'queue.limit' });
+            this.queueErrorSent = new Date().getTime();
+            return false;
+        }
         this.queue.songs.push(Song);
     }
 
