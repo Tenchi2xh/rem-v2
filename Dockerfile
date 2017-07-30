@@ -12,6 +12,8 @@ RUN echo "deb http://ftp.uk.debian.org/debian jessie-backports main" >> /etc/apt
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     wget -qO /usr/local/share/fonts/noto.otf https://github.com/googlei18n/noto-cjk/raw/master/NotoSansCJKjp-Regular.otf && \
+    wget -qO /usr/local/share/fonts/noto.otf https://github.com/googlei18n/noto-cjk/raw/master/NotoSansCJKjp-Bold.otf && \
+    wget -qO /usr/local/share/fonts/noto.otf https://github.com/googlei18n/noto-cjk/raw/master/NotoSansCJKjp-Black.otf && \
     fc-cache -v /usr/local/share/fonts/
 
 COPY src/run.sh src/dummy.js /
