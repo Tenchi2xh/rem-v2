@@ -140,7 +140,6 @@ rt {
     padding: 3px 3px 3px 23px;
 }`;
         }
-        console.log(sentence);
         sentence = sentence.replace(/\n/g, 'NEWLINE');
         utils.mecab(sentence, (stdout) => {
             var rows = stdout.split("\n");
@@ -156,12 +155,12 @@ rt {
                 const isText = (original.match(/([A-Za-z0-9]+)$/) !== null);
                 const isHiraKata = (original.match(/^([\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f]+)$/) !== null);
                 if (isText || isHiraKata)
-                    furi += original.replace(/NEWLINE/g, '<br />');
+                    furi += original;
                 else
                     furi += utils.furiToRb(original, utils.katakanaToHiragana(cols[7]));
                 out.push(cols);
             }
-            fs.writeFileSync('furi.html', code.replace('####css####', css).replace('####furigana####', furi));
+            fs.writeFileSync('furi.html', code.replace('####css####', css).replace('####furigana####', furi.replace(/NEWLINE/g, '<br />')));
             (async function () {
                 const instance = await phantom.create();
                 const page = await instance.createPage();
