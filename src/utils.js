@@ -128,19 +128,18 @@ module.exports = class utils {
             css = `body {
     font-size: 45pt;
     width: 1000px;
-    font-family: "Noto Sans";
-    font-weight: 900;
+    font-family: "Noto Sans CJK JP";
     margin: 0;
     padding: 0;
     background: black;
+    text-shadow: ${shadowCss};
+    font-weight: 500;
 }
 rt {
-    font-size: 20pt;
-    font-weight: 700;
+    font-size: 20pt; 
 }
 #text {
     color: white;
-    -webkit-text-stroke: 0.5px black;
     text-align: center; 
     padding: 3px
     position: relative;
