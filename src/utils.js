@@ -125,21 +125,38 @@ module.exports = class utils {
         if (sentence === '') return msg.channel.createMessage(this.t('generic.empty-search', { lngs: msg.lang }));
         if(css == '') {
             let shadowCss = utils.generateShadow(3.2, 50);
-            css = `
-body {
+            css = `body {
     font-size: 45pt;
-    text-shadow: ${shadowCss};
-    color: rgb(191, 191, 191);
     width: 1000px;
     font-family: "Noto Sans";
+    font-weight: 900;
+    margin: 0;
+    padding: 0;
+    background: black;
 }
 rt {
     font-size: 20pt;
-    font-weight: 400;
+    font-weight: 700;
 }
-#text img { display: none; }
 #text {
-    padding: 3px 3px 3px 23px;
+    color: white;
+    -webkit-text-stroke: 0.5px black;
+    text-align: center; 
+    padding: 3px
+    position: relative;
+	bottom: 0;
+}
+#text img {
+    position: absolute;
+	z-index: -1;
+	left: 0;
+	top: 0;
+}
+#text #furi {
+    background: rgba(0, 0, 0, .5);
+    position: absolute;
+	width: 100%;
+	bottom: 0;
 }`;
         }
         sentence = sentence.replace(/\n/g, 'NEWLINE');
@@ -170,7 +187,7 @@ rt {
                 var rect = await page.evaluate(function () {
                     return document.getElementById('text').getBoundingClientRect();
                 });
-                await page.property('clipRect', { top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+                //await page.property('clipRect', { top: rect.top, left: rect.left, width: rect.width, height: rect.height });
                 await page.render('out.png').then(() => {
                     let embed = {
                         "file": new Buffer(fs.readFileSync('out.png')),
