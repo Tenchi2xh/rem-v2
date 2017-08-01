@@ -20,9 +20,26 @@ class Read extends Command {
         var sentence = msg.content.split(' ');
         sentence.shift();
         sentence = sentence.join(' ').trim();
+        let shadowCss = utils.generateShadow(3.2, 50);
         utils.generateImageFromText(sentence, (embed) => {
             msg.channel.createMessage('', embed);
-        });
+        }, `
+body {
+    font-size: 45pt;
+    text-shadow: ${shadowCss};
+    color: rgb(191, 191, 191);
+    width: 1000px;
+    font-family: "Noto Sans";
+    font-weight: 500;
+}
+rt {
+    font-size: 20pt;
+    font-weight: 700;
+}
+#text {
+    padding-left: 23px;
+}
+`);
     }
 }
 module.exports = Read;

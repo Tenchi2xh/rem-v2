@@ -104,7 +104,7 @@ module.exports = class utils {
         return coords.join(", ");
     }
 
-    static async generateImageFromText(sentence, callback, css = '') {
+    static async generateImageFromText(sentence, callback, css = '', image = '') {
         var code = `<!Doctype html>
 <html>
     <head>
@@ -116,48 +116,12 @@ module.exports = class utils {
     <body>
         <div id='textContainer'>
             <div id="text">
-                <img src='pexels-photo-209798.jpeg'><br />
-                <div id='furi'>####furigana####</div>
+                ${image}<div id='furi'>####furigana####</div>
             </div>
         </div>
     </body>
 </html>`;
         if (sentence === '') return msg.channel.createMessage(this.t('generic.empty-search', { lngs: msg.lang }));
-        if(css == '') {
-            let shadowCss = utils.generateShadow(3.2, 50);
-            css = `body {
-    font-size: 45pt;
-    width: 1000px;
-    font-family: "Noto Sans CJK JP";
-    margin: 0;
-    padding: 0;
-    background: black;
-    text-shadow: ${shadowCss};
-    font-weight: 500;
-}
-rt {
-    font-size: 20pt; 
-}
-#text {
-    color: white;
-    text-align: center; 
-    padding: 3px
-    position: relative;
-	bottom: 0;
-}
-#text img {
-    position: absolute;
-	z-index: -1;
-	left: 0;
-	top: 0;
-}
-#text #furi {
-    background: rgba(0, 0, 0, .5);
-    position: absolute;
-	width: 100%;
-	bottom: 0;
-}`;
-        }
         sentence = sentence.replace(/\n/g, 'NEWLINE');
         utils.mecab(sentence, (stdout) => {
             var rows = stdout.split("\n");
@@ -183,10 +147,12 @@ rt {
                 const instance = await phantom.create();
                 const page = await instance.createPage();
                 await page.open('furi.html');
-                var rect = await page.evaluate(function () {
-                    return document.getElementById('text').getBoundingClientRect();
-                });
-                //await page.property('clipRect', { top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+                if (!image) {
+                    var rect = await page.evaluate(function () {
+                        return document.getElementById('text').getBoundingClientRect();
+                    });
+                    await page.property('clipRect', { top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+                }
                 await page.render('out.png').then(() => {
                     let embed = {
                         "file": new Buffer(fs.readFileSync('out.png')),
