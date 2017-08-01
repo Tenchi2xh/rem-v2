@@ -116,7 +116,8 @@ module.exports = class utils {
     <body>
         <div id='textContainer'>
             <div id="text">
-                ####furigana####
+                <img src='pexels-photo-209798.jpeg'><br />
+                <div id='furi'>####furigana####</div>
             </div>
         </div>
     </body>
@@ -134,8 +135,9 @@ body {
 }
 rt {
     font-size: 20pt;
-    font-weight: 700;
+    font-weight: 400;
 }
+#text img { display: none; }
 #text {
     padding: 3px 3px 3px 23px;
 }`;
