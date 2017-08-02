@@ -76,8 +76,10 @@ class Kanji extends Command {
             return;
         }
 
+        let message = (dictionary[kanji]) ? kanjiEmbed(dictionary[kanji]) : "";
+
         pnfs.readFile("../kanji/" + kanjiFile)
-            .then(buffer => msg.channel.createMessage(kanjiEmbed(dictionary[kanji]) , {
+            .then(buffer => msg.channel.createMessage(message , {
                 "file": buffer,
                 "name": kanji + ".gif"
             }))
