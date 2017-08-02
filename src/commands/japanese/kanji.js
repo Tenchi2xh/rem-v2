@@ -41,10 +41,10 @@ function kanjiEmbed(entry) {
             on.push(reading["reading"]);
         }
     }
-    if (kun) {
+    if (kun.length > 0) {
         embed["embed"]["fields"].push({"name": "Kun:", "value": kun.join(", "), "inline": true});
     }
-    if (kun) {
+    if (on.length > 0) {
         embed["embed"]["fields"].push({"name": "On:", "value": on.join(", "), "inline": true});
     }
     return embed;
