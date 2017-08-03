@@ -14,17 +14,61 @@ class Challenge extends Command {
             usage: 'help.challenge.usage',
             example: 'help.challenge.example'
         }
-        this.needsArguments = true;
+        this.needsArguments = false;
     }
 
-    run(msg) {
-        var sentence = msg.content.split(' ');
-        sentence.shift();
-        sentence = sentence.join(' ').trim();
-        msg.delete();   
+    async askFor(msg, topic) {
+        let questionMessage = await msg.channel.createMessage(topic);
+        let collector = msg.CON.addCollector(msg.channel.id, {
+            filter: (collectorMsg) => {
+                return collectorMsg.author.id === msg.author.id;
+            },
+            max: 1
+        });
+        return new Promise((resolve, reject) => {
+            collector.on('end', () => {
+                questionMessage.delete();
+                collector.collected.forEach(value => { // max is 1 so it'll only run once and this is the only way to iterate through a js map
+                    value.delete();
+                    resolve(value.content);
+                });
+            })
+        });
+    }
+
+    async endChallenge(con, channel, author) {
+        let points = [];
+        let collector = con.addCollector(channel.id, {
+            filter: (collected) => {
+                return collected.author.id === author;
+            },
+        });
+        const okMessage = "Correct! ";
+        const stopMessage = "STOP!!";
+        collector.on('message', async (msg) => {
+            if(msg.content.substr(0, okMessage.length) == okMessage) {
+                points.push(msg.content.substr(okMessage.length));
+                msg.delete();
+            }
+            if(msg.content.substr(0, stopMessage.length) == stopMessage) {
+                let dmChannel = await msg.author.getDMChannel();
+                msg.delete();
+                await dmChannel.createMessage("Challenge ended: Points given to: \n"+points.join('\n'));
+                collector.stop();
+                channel.delete();
+            }
+        })
+    }
+
+    async run(msg) {
+        let topic = await this.askFor(msg, "What's the topic of this challenge?");
+        let text = await this.askFor(msg, "What's the text to translate?");
+        var channel = await msg.channel.guild.createChannel('challenge', 0, 'Translation Challenge ' + (new Date()));
         let shadowCss = utils.generateShadow(3.2, 50);
-        utils.generateImageFromText(sentence, (embed) => {
-            msg.channel.createMessage('<@&341001978236764172> ~~ Can you solve today\'s challenge? (^o^)丿', embed);
+        utils.generateImageFromText(text, async (embed) => {
+            let collectorMsg = await channel.createMessage(`<@&341001978236764172> ~~ ${topic}\n Can you solve it? (^o^)丿`, embed);
+            this.endChallenge(msg.CON, channel, msg.author.id);
+            msg.delete();
         }, `
 body {
     font-size: 45pt;
