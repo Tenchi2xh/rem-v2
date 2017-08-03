@@ -37,26 +37,43 @@ class Challenge extends Command {
     }
 
     async endChallenge(con, channel, author) {
-        let points = [];
-        let collector = con.addCollector(channel.id, {
-            filter: (collected) => {
-                return collected.author.id === author;
-            },
-        });
-        const okMessage = "Correct! ";
+        let answers = {};
+        let collector = con.addCollector(channel.id);
         const stopMessage = "STOP!!";
         collector.on('message', async (msg) => {
-            if(msg.content.substr(0, okMessage.length) == okMessage) {
-                points.push(msg.content.substr(okMessage.length));
-                msg.delete();
+            if (msg.author.id === author) {
+                if(msg.content.substr(0, stopMessage.length) == stopMessage) {
+                    collector.stop();
+                    msg.channel.createMessage('Challenge ended. Answers: ');
+                    for(var user in answers) {
+                        if(answers.hasOwnProperty(user))
+                            msg.channel.createMessage(`<@!${user}>: ${answers[user]}`);
+                    }
+                    msg.delete();
+                    return;
+                }
             }
-            if(msg.content.substr(0, stopMessage.length) == stopMessage) {
+            if(!answers.hasOwnProperty(msg.author.id)) {
                 let dmChannel = await msg.author.getDMChannel();
-                msg.delete();
-                await dmChannel.createMessage("Challenge ended: Points given to: \n"+points.join('\n'));
-                collector.stop();
-                channel.delete();
+                var botMsg = await channel.createMessage(`<@!${msg.author.id}> Thank you for your answer, please continue in the PMs.`);
+                await dmChannel.createMessage(`Your last answer was: ${msg.content}. To accept say YES.`)
+                let pmCollector = con.addCollector(dmChannel.id);
+                let answerForUser = msg.content;
+                pmCollector.on('message', async(pmmsg) => {
+                    if (pmmsg.content !== 'YES') {
+                        dmChannel.createMessage(`Ok, I changed your answer to ${pmmsg.content} is that ok? If so, type YES.`);
+                        answerForUser = pmmsg.content;
+                    } else {
+                        dmChannel.createMessage('Thank you for your answer. The results will be out shortly');
+                        answers[pmmsg.author.id] = answerForUser;
+                        pmCollector.stop();
+                    }
+                });
+                setTimeout(() => {
+                    botMsg.delete();
+                }, 5000)
             }
+            msg.delete();
         })
     }
 
