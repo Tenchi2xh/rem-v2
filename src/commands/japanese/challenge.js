@@ -1,5 +1,6 @@
 let Command = require('../../structures/command');
-var utils = require('../../utils.js');
+let utils = require('../../utils.js');
+const quizModel = require('../../DB/quizAnswers.js');
 class Challenge extends Command {
     constructor({ t }) {
         super();
@@ -66,12 +67,22 @@ class Challenge extends Command {
                     } else {
                         dmChannel.createMessage('Thank you for your answer. The results will be out shortly');
                         answers[pmmsg.author.id] = answerForUser;
+                        let quizAnswer = new quizModel({
+                            id: pmmsg.id,
+                            date: Date.now(),
+                            answer: answerForUser,
+                            user: pmmsg.author.id,
+                            quizId: msg.id
+                        });
+                        quizAnswer.save((err) => {
+                            if (err) return winston.error(err);
+                        });
                         pmCollector.stop();
                     }
                 });
                 setTimeout(() => {
                     botMsg.delete();
-                }, 5000)
+                }, 4000)
             }
             msg.delete();
         })
