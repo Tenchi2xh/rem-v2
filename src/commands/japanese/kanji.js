@@ -25,6 +25,9 @@ function kanjiEmbed(entry) {
             "footer": {
                 "text": "Information taken from KANJIDIC2 by the EDRDG"
             },
+            "thumbnail": {
+                "url": "attachment://reading.gif"
+            },
             "author": {
                 "name": entry["literal"]
             },
@@ -81,7 +84,7 @@ class Kanji extends Command {
         pnfs.readFile("../kanji/" + kanjiFile)
             .then(buffer => msg.channel.createMessage(message , {
                 "file": buffer,
-                "name": kanji + ".gif"
+                "name": "reading.gif"
             }))
             .catch(e => console.error(e));
     }
