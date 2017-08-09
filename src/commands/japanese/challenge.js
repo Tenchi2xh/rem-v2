@@ -37,26 +37,54 @@ class Challenge extends Command {
         });
     }
 
-    async endChallenge(con, channel, author) {
+    endTimer(remaining) {
+        remaining = remaining / 1000;
+        var hrs = Math.floor(remaining / 3600);
+        var mins = Math.floor((remaining % 3600) / 60);
+        var secs = Math.floor(remaining % 60);
+        var ret = "";
+
+        if (hrs > 0)
+            ret += hrs + "h " + (mins < 10 ? "0" : "");
+
+        ret += mins + " min " + (secs < 10 ? "0" : "");
+        ret += secs + "s";
+
+        return ret;
+    }
+
+    async endChallenge(con, channel, author, duration) {
         let answers = {};
         let collector = con.addCollector(channel.id);
+        let timerMessage = await channel.createMessage('Challenge started');
+        const updateMessage = () => {
+            timerMessage.edit('The challenge will end in: ' + this.endTimer(timeEndFixed - new Date().getTime()));
+        };
+        const timeEndFixed = new Date().getTime() + (duration * 1000);
         const stopMessage = "STOP!!";
+        const interval = setInterval(updateMessage, 2000);
+        const doStop = function() {
+            collector.stop();
+            channel.createMessage('Challenge ended. Answers: ');
+            for (var user in answers) {
+                if (answers.hasOwnProperty(user))
+                    channel.createMessage(`<@!${user}>: ${answers[user]}`);
+            }
+            clearTimeout(interval);
+        };
+        setTimeout(doStop, duration * 1000);
+        updateMessage();
         collector.on('message', async (msg) => {
             if (msg.author.id === author) {
                 if(msg.content.substr(0, stopMessage.length) == stopMessage) {
-                    collector.stop();
-                    msg.channel.createMessage('Challenge ended. Answers: ');
-                    for(var user in answers) {
-                        if(answers.hasOwnProperty(user))
-                            msg.channel.createMessage(`<@!${user}>: ${answers[user]}`);
-                    }
+                    doStop();
                     msg.delete();
                     return;
                 }
             }
             if(!answers.hasOwnProperty(msg.author.id)) {
                 let dmChannel = await msg.author.getDMChannel();
-                var botMsg = await channel.createMessage(`<@!${msg.author.id}> Thank you for your answer, please continue in the PMs.`);
+                var botMsg = await channel.createMessage(`<@!${msg.author.id}> Thank you for your answer, please confirm in the PMs.`);
                 await dmChannel.createMessage(`Your last answer was: ${msg.content}. To accept say YES.`)
                 let pmCollector = con.addCollector(dmChannel.id);
                 let answerForUser = msg.content;
@@ -76,13 +104,11 @@ class Challenge extends Command {
                         });
                         quizAnswer.save((err) => {
                             if (err) return winston.error(err);
+                            botMsg.edit(`<@!${msg.author.id}> submitted an answer.`)
                         });
                         pmCollector.stop();
                     }
                 });
-                setTimeout(() => {
-                    botMsg.delete();
-                }, 4000)
             }
             msg.delete();
         })
@@ -91,15 +117,17 @@ class Challenge extends Command {
     async run(msg) {
         let topic = await this.askFor(msg, "What's the topic of this challenge?");
         let text = await this.askFor(msg, "What's the text to translate?");
+        let duration = await this.askFor(msg, "How long should the challenge last? (seconds)");
         var channel = await msg.channel.guild.createChannel('challenge', 0, 'Translation Challenge ' + (new Date()));
+        channel.editPermission(msg.channel.guild.roles.find(x => x.name == '@everyone').id, 1024 | 2048 | 65536, 0, "role", "Change permissions for the challenge.");
         let shadowCss = utils.generateShadow(3.2, 50);
         utils.generateImageFromText(text, async (embed) => {
-            let collectorMsg = await channel.createMessage(`<@&341001978236764172> ~~ ${topic}\n Can you solve it? (^o^)丿`, embed);
-            this.endChallenge(msg.CON, channel, msg.author.id);
+            await channel.createMessage(`<@&341001978236764172> ~~ ${topic}\n Can you solve it? (^o^)丿`, embed);
+            this.endChallenge(msg.CON, channel, msg.author.id, duration);
             msg.delete();
         }, `
 body {
-    font-size: 45pt;
+    font-size: 35pt;
     width: 1000px;
     font-family: "Noto Sans";
     font-weight: 400;
