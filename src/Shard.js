@@ -74,6 +74,8 @@ class Shard {
             this.init();
         });
         this.Redis = redisClient;
+        // JFZ Monitoring
+        this.invites = [];
     }
 
     /**
@@ -188,7 +190,7 @@ class Shard {
      * 5. Now, Rem sends an initial data update to the main process to update the guild/user counts if necessary.
      * 6. A Interval gets created to update data every 5 mins
      */
-    clientReady() {
+    async clientReady() {
         this.MOD.init(this.HUB, this.Raven, this.Redis).then(() => {
             if (this.SHARDED) {
                 this.HUB.updateState('bot_ready');
@@ -205,6 +207,18 @@ class Shard {
             this.sendStats();
             this.createInterval();
         });
+        // JFZ Monitoring
+        this.invites = await this.getInvites("203238995117867008");
+    }
+
+    async getInvites(id) {
+        let guild = this.bot.guilds.find(g => g.id == id);
+        let rawInvites = await guild.getInvites();
+        let invites = {};
+        for (var i = 0; i < rawInvites.length; ++i) {
+            invites[rawInvites[i].code] = rawInvites[i].uses;
+        }
+        return invites;
     }
 
     message(msg) {
@@ -286,6 +300,18 @@ class Shard {
 
     async guildMemberAdd(Guild, Member) {
         if (this.ready) {
+            if (Guild.id == "203238995117867008") {
+                console.log(`${Member.mention} joined`);
+                let newInvites = await this.getInvites(Guild.id);
+                for (var code in newInvites) {
+                    if (this.invites[code] < newInvites[code]) {
+                        this.bot.createMessage("275150545243602944", `User ${Member.mention} joined using invite \`${code}\``);
+                        break;
+                    }
+                }
+                this.invites = await this.getInvites(Guild.id);
+            }
+
             try {
                 let greeting = await this.SM.get(Guild.id, 'guild', 'greeting.text');
                 let greetingChannel = await this.SM.get(Guild.id, 'guild', 'greeting.channel');
