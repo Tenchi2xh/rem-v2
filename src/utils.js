@@ -109,7 +109,7 @@ module.exports = class utils {
         return coords.join(", ");
     }
 
-    static async generateImageFromText(sentence, callback, css = '', image = '') {
+    static async generateImageFromText(sentence, shouldShowFurigana, callback, css = '', image = '') {
         var code = `<!Doctype html>
 <html>
     <head>
@@ -128,45 +128,51 @@ module.exports = class utils {
 </html>`;
         if (sentence === '') return msg.channel.createMessage(this.t('generic.empty-search', { lngs: msg.lang }));
         sentence = sentence.replace(/\n/g, 'NEWLINE');
-        utils.mecab(sentence, (stdout) => {
-            var rows = stdout.split("\n");
-            var furi = '';
-            var out = [];
-            for (var row of rows) {
-                row = row.split("\t");
-                const original = row[0];
-                let cols = row[1];
-                if (typeof cols === 'undefined')
-                    continue;
-                cols = cols.split(',');
-                const isText = (original.match(/([A-Za-z0-9]+)$/) !== null);
-                const isHiraKata = (original.match(/^([\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f]+)$/) !== null);
-                if (isText || isHiraKata)
-                    furi += original;
-                else
-                    furi += utils.furiToRb(original, utils.katakanaToHiragana(cols[7]));
-                out.push(cols);
-            }
-            fs.writeFileSync('furi.html', code.replace('####css####', css).replace('####furigana####', furi.replace(/NEWLINE/g, '<br />')));
-            (async function () {
-                const instance = await phantom.create();
-                const page = await instance.createPage();
-                await page.open('furi.html');
-                if (!image) {
-                    var rect = await page.evaluate(function () {
-                        return document.getElementById('text').getBoundingClientRect();
-                    });
-                    await page.property('clipRect', { top: rect.top, left: rect.left, width: rect.width, height: rect.height });
-                }
-                await page.render('out.png').then(() => {
-                    let embed = {
-                        "file": new Buffer(fs.readFileSync('out.png')),
-                        "name": "reading.png"
-                    };
-                    callback(embed);
+        let generateImage = async function () {
+            const instance = await phantom.create();
+            const page = await instance.createPage();
+            await page.open('furi.html');
+            if (!image) {
+                var rect = await page.evaluate(function () {
+                    return document.getElementById('text').getBoundingClientRect();
                 });
-                await instance.exit();
-            })();
-        });
+                await page.property('clipRect', { top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+            }
+            await page.render('out.png').then(() => {
+                let embed = {
+                    "file": new Buffer(fs.readFileSync('out.png')),
+                    "name": "reading.png"
+                };
+                callback(embed);
+            });
+            await instance.exit();
+        };
+        if(shouldShowFurigana) {
+            utils.mecab(sentence, (stdout) => {
+                var rows = stdout.split("\n");
+                var furi = '';
+                var out = [];
+                for (var row of rows) {
+                    row = row.split("\t");
+                    const original = row[0];
+                    let cols = row[1];
+                    if (typeof cols === 'undefined')
+                        continue;
+                    cols = cols.split(',');
+                    const isText = (original.match(/([A-Za-z0-9]+)$/) !== null);
+                    const isHiraKata = (original.match(/^([\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f]+)$/) !== null);
+                    if (isText || isHiraKata)
+                        furi += original;
+                    else
+                        furi += utils.furiToRb(original, utils.katakanaToHiragana(cols[7]));
+                    out.push(cols);
+                }
+                fs.writeFileSync('furi.html', code.replace('####css####', css).replace('####furigana####', furi.replace(/NEWLINE/g, '<br />')));
+                generateImage();
+            });
+        }else{
+            fs.writeFileSync('furi.html', code.replace('####css####', css).replace('####furigana####', sentence.replace(/NEWLINE/g, '<br />')));
+            generateImage();
+        }
     }
 }

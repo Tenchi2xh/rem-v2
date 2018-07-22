@@ -120,11 +120,13 @@ class Challenge extends Command {
     async run(msg) {
         let topic = await this.askFor(msg, "What's the topic of this challenge?");
         let text = await this.askFor(msg, "What's the text to translate?");
+        let shouldFuriganaQuestion = await this.askFor(msg, "Should you show furigana? [N/y]");
+        let shouldShowFurigana = (shouldFuriganaQuestion.toLowerCase() == "y" || shouldFuriganaQuestion.toLowerCase() == "true" || shouldFuriganaQuestion.toLowerCase() == "yes") ? true : false;
         let duration = await this.askFor(msg, "How long should the challenge last? (seconds)");
         var channel = await msg.channel.guild.channels.find(c => c.name == "challenge");
         //channel.editPermission(msg.channel.guild.roles.find(x => x.name == '@everyone').id, 1024 | 2048 | 65536, 0, "role", "Change permissions for the challenge.");
         let shadowCss = utils.generateShadow(3.2, 50);
-        utils.generateImageFromText(text, async (embed) => {
+        utils.generateImageFromText(text, shouldShowFurigana, async (embed) => {
             await channel.createMessage(`<@&353425937196515330> ~~ ${topic}\n Can you solve it? (^o^)丿`, embed);
             this.endChallenge(msg.CON, channel, msg.author.id, duration, this);
             msg.delete();
