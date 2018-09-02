@@ -123,7 +123,7 @@ class Challenge extends Command {
         let shouldFuriganaQuestion = await this.askFor(msg, "Should you show furigana? [N/y]");
         let shouldShowFurigana = (shouldFuriganaQuestion.toLowerCase() == "y" || shouldFuriganaQuestion.toLowerCase() == "true" || shouldFuriganaQuestion.toLowerCase() == "yes") ? true : false;
         let duration = await this.askFor(msg, "How long should the challenge last? (seconds)");
-        var channel = await msg.channel.guild.channels.find(c => c.name == "challenge");
+        var channel = await msg.channel.guild.channels.find(c => c.id == "353598305852456965");
         //channel.editPermission(msg.channel.guild.roles.find(x => x.name == '@everyone').id, 1024 | 2048 | 65536, 0, "role", "Change permissions for the challenge.");
         let shadowCss = utils.generateShadow(3.2, 50);
         utils.generateImageFromText(text, shouldShowFurigana, async (embed) => {
@@ -148,7 +148,7 @@ rt {
 #text {
     color: white;
     -webkit-text-stroke: 0.5px black;
-    text-align: center; 
+    text-align: center;
     padding: 3px
     position: relative;
     bottom: 0;
@@ -169,4 +169,4 @@ rt {
     }
 }
 
-module.exports = Challenge; 
+module.exports = Challenge;
